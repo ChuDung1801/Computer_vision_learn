@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ôn tập Computer Vision · R-CNN · YOLO v1 · U-Net</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --page-bg:#EAF4FB;
+  --card-bg:#FFFFFF;
+  --card-bg-soft:#F3FAFF;
+  --blue-50:#EAF6FF;
+  --blue-100:#D7ECFB;
+  --blue-200:#BEE1F7;
+  --blue-300:#8FCBED;
+  --blue-400:#63B3E0;
+  --blue-500:#3D98D6;
+  --blue-600:#2F86C7;
+  --blue-700:#1F6BA6;
+  --blue-900:#123F65;
+  --ink:#10151B;
+  --ink-soft:#3C4756;
+  --amber-bg:#FFF8E8;
+  --amber-border:#F0CB72;
+  --amber-text:#7A5300;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--page-bg);
+  color:var(--ink);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+.app{display:flex;min-height:100vh;}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{
+  width:266px;
+  flex-shrink:0;
+  background:linear-gradient(180deg,var(--blue-700),var(--blue-900));
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  padding:28px 18px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+}
+.brand{margin-bottom:30px;}
+.brand .logo-row{display:flex;align-items:center;gap:9px;}
+.brand .logo-box{
+  width:30px;height:30px;border:2px solid #fff;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  position:relative;
+}
+.brand .logo-box::before,.brand .logo-box::after{
+  content:"";position:absolute;width:6px;height:6px;border:1.6px solid #fff;
+}
+.brand .logo-box::before{top:-3px;left:-3px;border-right:none;border-bottom:none;border-radius:3px 0 0 0;}
+.brand .logo-box::after{bottom:-3px;right:-3px;border-left:none;border-top:none;border-radius:0 0 3px 0;}
+.brand .logo-inner{width:10px;height:10px;border:1.6px solid #fff;border-radius:2px;}
+.brand h1{font-family:'Space Grotesk';font-size:18px;letter-spacing:.01em;}
+.brand p{font-size:11.5px;opacity:.72;margin-top:8px;line-height:1.5;}
+
+nav{display:flex;flex-direction:column;gap:5px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  background:transparent;border:none;color:#EAF6FF;
+  padding:10px 12px;border-radius:12px;
+  font-family:'Inter',sans-serif;font-size:13.6px;font-weight:500;
+  cursor:pointer;text-align:left;width:100%;
+  transition:background .15s,color .15s;
+}
+.nav-item .ico{width:18px;height:18px;flex-shrink:0;stroke:currentColor;}
+.nav-item:hover{background:rgba(255,255,255,.10);}
+.nav-item.active{background:#fff;color:var(--blue-900);font-weight:600;}
+.nav-item .label-num{
+  margin-left:auto;font-family:'JetBrains Mono';font-size:10px;opacity:.6;
+}
+.nav-item.active .label-num{opacity:.45;}
+
+.sidebar-footer{
+  margin-top:auto;padding-top:18px;margin-top:auto;
+  border-top:1px solid rgba(255,255,255,.16);
+  font-family:'JetBrains Mono';font-size:10.5px;opacity:.55;letter-spacing:.02em;
+}
+
+/* ---------- CONTENT ---------- */
+main.content{flex:1;padding:40px 40px 90px;min-width:0;}
+.content-inner{max-width:840px;margin:0 auto;}
+.panel{display:none;}
+.panel.active{display:block;animation:fadeIn .28s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.eyebrow{
+  font-family:'JetBrains Mono';font-size:11.5px;color:var(--blue-700);
+  letter-spacing:.07em;text-transform:uppercase;
+  background:var(--blue-100);padding:4px 11px;border-radius:8px;
+  display:inline-block;margin-bottom:12px;
+}
+.page-head h2{font-family:'Space Grotesk';font-size:32px;color:var(--ink);margin-bottom:10px;line-height:1.2;}
+.page-head .sub{color:var(--ink-soft);font-size:14.5px;max-width:620px;}
+
+.meta-chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;}
+.chip{
+  font-family:'JetBrains Mono';font-size:11.5px;background:var(--card-bg);
+  border:1.5px solid var(--blue-300);color:var(--blue-700);
+  padding:5px 12px;border-radius:20px;white-space:nowrap;
+}
+
+/* ---------- BOUNDING BOX CARD ---------- */
+.bbox-card{
+  position:relative;background:var(--card-bg);
+  border:2px solid var(--blue-500);border-radius:20px;
+  padding:32px 26px 26px;margin:34px 0 0;
+  box-shadow:0 10px 24px -16px rgba(20,90,140,.35);
+}
+.bbox-card .tag{
+  position:absolute;top:-15px;left:22px;
+  background:var(--blue-700);color:#fff;
+  font-family:'JetBrains Mono';font-size:11.5px;font-weight:500;
+  padding:5px 12px;border-radius:9px;letter-spacing:.02em;
+  box-shadow:0 3px 8px -3px rgba(20,80,130,.5);
+}
+.corner{position:absolute;width:16px;height:16px;pointer-events:none;}
+.corner-tl{top:-4px;left:-4px;border-top:3px solid var(--blue-700);border-left:3px solid var(--blue-700);border-radius:8px 0 0 0;}
+.corner-tr{top:-4px;right:-4px;border-top:3px solid var(--blue-700);border-right:3px solid var(--blue-700);border-radius:0 8px 0 0;}
+.corner-bl{bottom:-4px;left:-4px;border-bottom:3px solid var(--blue-700);border-left:3px solid var(--blue-700);border-radius:0 0 0 8px;}
+.corner-br{bottom:-4px;right:-4px;border-bottom:3px solid var(--blue-700);border-right:3px solid var(--blue-700);border-radius:0 0 8px 0;}
+
+.bbox-card h3{font-family:'Space Grotesk';font-size:18px;color:var(--blue-900);margin-bottom:14px;}
+.bbox-card p{font-size:14.3px;color:var(--ink);margin-bottom:10px;}
+.bbox-card ul{padding-left:20px;margin:10px 0 14px;}
+.bbox-card li{font-size:14.3px;color:var(--ink);margin-bottom:7px;}
+.bbox-card strong{color:var(--blue-900);}
+
+/* pipeline */
+.pipeline{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:16px 0 6px;}
+.pipe-step{
+  background:var(--blue-50);border:1.5px dashed var(--blue-400);border-radius:12px;
+  padding:8px 12px;font-size:12px;font-family:'JetBrains Mono';color:var(--blue-900);
+  white-space:nowrap;
+}
+.pipe-arrow{color:var(--blue-500);font-size:16px;font-weight:600;}
+
+/* formula */
+.formula-block{background:var(--blue-50);border-radius:14px;padding:16px 18px;margin:14px 0;}
+.formula-name{
+  font-family:'JetBrains Mono';font-size:11px;color:var(--blue-700);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;
+}
+.formula{font-family:'JetBrains Mono';font-size:14.5px;color:var(--ink);overflow-x:auto;padding:2px 0;}
+.formula-desc{font-size:12.8px;color:var(--ink-soft);margin-top:9px;line-height:1.55;}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 4px;font-size:13.5px;line-height:1.15;}
+.frac .num{padding:0 4px 2px;border-bottom:1.4px solid var(--ink);}
+.frac .den{padding:2px 4px 0;}
+.formula sub{font-size:10.5px;}
+.formula sup{font-size:10.5px;}
+
+/* loss term table */
+.term-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.8px;}
+.term-table td,.term-table th{padding:9px 10px;border-bottom:1px solid var(--blue-100);text-align:left;vertical-align:top;}
+.term-table th{font-family:'JetBrains Mono';font-size:10.6px;text-transform:uppercase;color:var(--blue-700);letter-spacing:.03em;}
+.term-table td.f{font-family:'JetBrains Mono';font-size:12.6px;white-space:nowrap;}
+
+/* comparison table */
+.table-wrap{overflow-x:auto;margin-top:8px;}
+table.cmp{width:100%;border-collapse:collapse;font-size:13px;min-width:560px;}
+table.cmp th,table.cmp td{padding:11px 13px;text-align:left;border-bottom:1px solid var(--blue-100);}
+table.cmp th{font-family:'JetBrains Mono';font-size:11px;text-transform:uppercase;color:var(--blue-700);letter-spacing:.04em;}
+table.cmp tr:hover td{background:var(--blue-50);}
+table.cmp td b{color:var(--blue-900);}
+
+/* svg example box */
+.example-svg-wrap{
+  background:var(--blue-50);border-radius:16px;padding:16px;margin:14px 0 8px;
+  display:flex;justify-content:center;
+}
+.example-svg-wrap svg{width:100%;max-width:440px;height:auto;}
+.example-caption{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+
+/* note callout */
+.note{background:var(--amber-bg);border:1.5px solid var(--amber-border);border-radius:14px;padding:14px 18px;margin-top:20px;}
+.note b{
+  font-family:'JetBrains Mono';font-size:10.8px;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--amber-text);display:block;margin-bottom:5px;
+}
+.note p{font-size:13.4px;color:#5b4400;margin:0;}
+
+/* overview quick grid */
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px;}
+.quick-card{
+  background:var(--card-bg);border:2px solid var(--blue-300);border-radius:16px;
+  padding:18px;cursor:pointer;transition:.15s;text-align:left;
+}
+.quick-card:hover{border-color:var(--blue-600);transform:translateY(-3px);box-shadow:0 10px 20px -14px rgba(20,90,140,.4);}
+.quick-card .qc-tag{font-family:'JetBrains Mono';font-size:10.6px;color:var(--blue-700);}
+.quick-card h4{font-family:'Space Grotesk';font-size:16.5px;margin:7px 0;color:var(--ink);}
+.quick-card p{font-size:12.6px;color:var(--ink-soft);margin-bottom:10px;}
+.quick-card .go{font-size:12px;color:var(--blue-600);font-weight:600;}
+
+/* responsive */
+@media (max-width:900px){
+  .app{flex-direction:column;}
+  .sidebar{
+    width:100%;height:auto;position:sticky;top:0;
+    flex-direction:row;align-items:center;padding:12px 14px;overflow-x:auto;z-index:20;
+    gap:14px;
+  }
+  .brand{margin-bottom:0;display:flex;align-items:center;}
+  .brand p{display:none;}
+  nav{flex-direction:row;gap:6px;}
+  .nav-item{white-space:nowrap;}
+  .nav-item .label-num{display:none;}
+  .sidebar-footer{display:none;}
+  main.content{padding:26px 18px 70px;}
+  .page-head h2{font-size:25px;}
+  .quick-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-row">
+        <span class="logo-box"><span class="logo-inner"></span></span>
+        <h1>CV REVIEW</h1>
+      </div>
+      <p>Ôn tập kiến thức cơ bản — các mô hình thị giác máy tính</p>
+    </div>
+
+    <nav>
+      <button class="nav-item active" data-target="overview">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+        Tổng quan
+        <span class="label-num">00</span>
+      </button>
+      <button class="nav-item" data-target="rcnn">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V4h4"/><path d="M16 4h4v4"/><path d="M20 16v4h-4"/><path d="M8 20H4v-4"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg>
+        R-CNN
+        <span class="label-num">01</span>
+      </button>
+      <button class="nav-item" data-target="yolov1">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        YOLO v1
+        <span class="label-num">02</span>
+      </button>
+      <button class="nav-item" data-target="unet">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 8l-9 5-9-5 9-5Z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg>
+        U-Net
+        <span class="label-num">03</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">build: cv-101 · ôn tập giữa kỳ</div>
+  </aside>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="content">
+    <div class="content-inner">
+
+      <!-- ===== OVERVIEW ===== -->
+      <section id="overview" class="panel active">
+        <div class="page-head">
+          <span class="eyebrow">computer vision · ôn tập</span>
+          <h2>Ôn tập các mô hình thị giác máy tính</h2>
+          <p class="sub">Tổng hợp kiến thức cơ bản, công thức và ví dụ minh họa cho ba mô hình quan trọng trong môn Thị giác máy tính: <strong>R-CNN</strong>, <strong>YOLO v1</strong> và <strong>U-Net</strong>. Chọn một mục ở menu bên trái để xem chi tiết.</p>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">overview : so_sanh_nhanh</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Bảng so sánh nhanh</h3>
+          <div class="table-wrap">
+            <table class="cmp">
+              <tr><th>Mô hình</th><th>Năm</th><th>Loại bài toán</th><th>Cách hoạt động</th><th>Tốc độ</th></tr>
+              <tr><td><b>R-CNN</b></td><td>2014</td><td>Object Detection (2-stage)</td><td>Region proposal → CNN → SVM → Bbox regression</td><td>Chậm (~47s/ảnh)</td></tr>
+              <tr><td><b>YOLO v1</b></td><td>2016</td><td>Object Detection (1-stage)</td><td>Chia lưới, dự đoán trực tiếp toạ độ + lớp</td><td>Rất nhanh (~45 FPS)</td></tr>
+              <tr><td><b>U-Net</b></td><td>2015</td><td>Semantic Segmentation</td><td>Encoder–Decoder + skip connection</td><td>Trung bình</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="quick-grid">
+          <button class="quick-card" onclick="goTo('rcnn')">
+            <div class="qc-tag">model.01</div>
+            <h4>R-CNN</h4>
+            <p>Two-stage detector: sinh region proposal rồi phân loại bằng CNN + SVM.</p>
+            <span class="go">Xem chi tiết →</span>
+          </button>
+          <button class="quick-card" onclick="goTo('yolov1')">
+            <div class="qc-tag">model.02</div>
+            <h4>YOLO v1</h4>
+            <p>One-stage detector: chia ảnh thành lưới, dự đoán bbox + lớp trong 1 lần forward.</p>
+            <span class="go">Xem chi tiết →</span>
+          </button>
+          <button class="quick-card" onclick="goTo('unet')">
+            <div class="qc-tag">model.03</div>
+            <h4>U-Net</h4>
+            <p>Kiến trúc encoder–decoder hình chữ U cho phân đoạn ảnh, đặc biệt ảnh y tế.</p>
+            <span class="go">Xem chi tiết →</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== R-CNN ===== -->
+      <section id="rcnn" class="panel">
+        <div class="page-head">
+          <span class="eyebrow">two-stage detector · 2014</span>
+          <h2>R-CNN — Regions with CNN Features</h2>
+          <p class="sub">Mô hình object detection đầu tiên kết hợp region proposal truyền thống với đặc trưng học sâu từ CNN, mở đường cho cả họ Fast/Faster R-CNN sau này.</p>
+          <div class="meta-chips">
+            <span class="chip">năm: 2014</span>
+            <span class="chip">tác giả: R. Girshick et al.</span>
+            <span class="chip">loại: two-stage</span>
+            <span class="chip">mAP VOC2007 ≈ 58%</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">concept : pipeline</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Kiến thức cơ bản</h3>
+          <p>R-CNN tách bài toán detection thành <strong>2 giai đoạn</strong>: đầu tiên đề xuất các vùng có khả năng chứa vật thể (region proposal), sau đó mới phân loại từng vùng bằng CNN.</p>
+          <ul>
+            <li><strong>Region Proposal:</strong> dùng thuật toán <em>Selective Search</em> để sinh ra khoảng 2000 vùng đề xuất trên mỗi ảnh, không quan tâm vùng đó thuộc lớp gì.</li>
+            <li><strong>Warp ảnh:</strong> mỗi vùng được co giãn (warp) về kích thước cố định 227×227 để đưa vào CNN (AlexNet).</li>
+            <li><strong>Trích đặc trưng:</strong> CNN trích ra vector đặc trưng 4096 chiều từ tầng fc7 cho mỗi vùng.</li>
+            <li><strong>Phân loại:</strong> dùng một SVM nhị phân riêng cho từng lớp để chấm điểm vùng đó thuộc lớp nào.</li>
+            <li><strong>Hồi quy bounding box:</strong> một bộ hồi quy tuyến tính riêng tinh chỉnh lại toạ độ của vùng đề xuất cho khớp với vật thể thật.</li>
+            <li><strong>Non-Max Suppression (NMS):</strong> loại bỏ các box trùng lặp, chỉ giữ box có điểm tin cậy cao nhất cho mỗi vật thể.</li>
+          </ul>
+
+          <div class="pipeline">
+            <span class="pipe-step">Ảnh đầu vào</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Selective Search<br>(~2000 proposals)</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Warp 227×227</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">CNN (4096-d)</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">SVM phân loại</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Bbox Regression</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">NMS</span>
+          </div>
+
+          <p>Nhược điểm lớn nhất: CNN, SVM và bộ hồi quy được huấn luyện <strong>tách rời thành 3 giai đoạn</strong>, và CNN phải chạy lại cho từng vùng đề xuất (~2000 lần/ảnh) → rất chậm, không train end-to-end. Đây chính là động lực ra đời Fast R-CNN và Faster R-CNN.</p>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">formula : iou + bbox_regression</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Công thức</h3>
+
+          <div class="formula-block">
+            <div class="formula-name">IoU (Intersection over Union)</div>
+            <div class="formula">IoU(B<sub>p</sub>, B<sub>gt</sub>) = <span class="frac"><span class="num">area(B<sub>p</sub> ∩ B<sub>gt</sub>)</span><span class="den">area(B<sub>p</sub> ∪ B<sub>gt</sub>)</span></span></div>
+            <div class="formula-desc">Dùng để đo độ chồng lấp giữa box dự đoán B<sub>p</sub> và box thật B<sub>gt</sub>, làm cơ sở cho NMS và đánh giá mAP.</div>
+          </div>
+
+          <div class="formula-block">
+            <div class="formula-name">Mục tiêu hồi quy bounding box (P → G)</div>
+            <div class="formula">
+              t<sub>x</sub> = (G<sub>x</sub> − P<sub>x</sub>) / P<sub>w</sub> &nbsp;&nbsp; t<sub>y</sub> = (G<sub>y</sub> − P<sub>y</sub>) / P<sub>h</sub><br>
+              t<sub>w</sub> = log(G<sub>w</sub> / P<sub>w</sub>) &nbsp;&nbsp; t<sub>h</sub> = log(G<sub>h</sub> / P<sub>h</sub>)
+            </div>
+            <div class="formula-desc">P = (P<sub>x</sub>,P<sub>y</sub>,P<sub>w</sub>,P<sub>h</sub>) là box đề xuất, G = (G<sub>x</sub>,G<sub>y</sub>,G<sub>w</sub>,G<sub>h</sub>) là box thật (ground-truth). Bộ hồi quy học cách dự đoán (t<sub>x</sub>,t<sub>y</sub>,t<sub>w</sub>,t<sub>h</sub>) từ đặc trưng CNN của P.</div>
+          </div>
+
+          <div class="formula-block">
+            <div class="formula-name">Tái tạo box dự đoán cuối cùng</div>
+            <div class="formula">
+              Ĝ<sub>x</sub> = P<sub>w</sub>·d<sub>x</sub>(P) + P<sub>x</sub> &nbsp;&nbsp; Ĝ<sub>y</sub> = P<sub>h</sub>·d<sub>y</sub>(P) + P<sub>y</sub><br>
+              Ĝ<sub>w</sub> = P<sub>w</sub>·exp(d<sub>w</sub>(P)) &nbsp;&nbsp; Ĝ<sub>h</sub> = P<sub>h</sub>·exp(d<sub>h</sub>(P))
+            </div>
+            <div class="formula-desc">d(P) là đầu ra của bộ hồi quy. Dùng exp cho w,h để đảm bảo kích thước luôn dương.</div>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">example : object_detection</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Ví dụ minh họa</h3>
+          <div class="example-svg-wrap">
+            <svg viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="8" width="404" height="214" rx="16" fill="#F3FAFF" stroke="#BEE1F7" stroke-width="2"/>
+              <ellipse cx="215" cy="155" rx="70" ry="45" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <circle cx="155" cy="98" r="32" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <polygon points="133,75 142,42 156,73" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <polygon points="176,73 188,42 198,75" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <rect x="92" y="52" width="158" height="148" fill="none" stroke="#8FCBED" stroke-width="2" stroke-dasharray="5 4" rx="8"/>
+              <rect x="118" y="38" width="138" height="118" fill="none" stroke="#8FCBED" stroke-width="2" stroke-dasharray="5 4" rx="8"/>
+              <rect x="108" y="62" width="186" height="156" fill="none" stroke="#8FCBED" stroke-width="2" stroke-dasharray="5 4" rx="8"/>
+              <rect x="100" y="50" width="176" height="160" fill="none" stroke="#1F6BA6" stroke-width="3" rx="10"/>
+              <rect x="100" y="33" width="88" height="20" fill="#1F6BA6" rx="6"/>
+              <text x="108" y="47" font-family="JetBrains Mono, monospace" font-size="11" fill="#fff">cat 0.94</text>
+            </svg>
+          </div>
+          <p class="example-caption">Ảnh chứa một con mèo. Selective Search sinh ra nhiều vùng đề xuất (đường nét đứt) có kích thước/vị trí khác nhau. Sau khi CNN trích đặc trưng và SVM chấm điểm, NMS loại các box trùng lặp và giữ lại box có điểm cao nhất — <strong>"cat: 0.94"</strong> (đường viền liền nét).</p>
+        </div>
+
+        <div class="note">
+          <b>Ghi nhớ</b>
+          <p>R-CNN = Region Proposal (Selective Search) + CNN trích đặc trưng + SVM phân loại + Bounding Box Regression. Ba mô-đun huấn luyện tách rời → chậm, đây là lý do Fast R-CNN / Faster R-CNN ra đời sau đó.</p>
+        </div>
+      </section>
+
+      <!-- ===== YOLO v1 ===== -->
+      <section id="yolov1" class="panel">
+        <div class="page-head">
+          <span class="eyebrow">one-stage detector · 2016</span>
+          <h2>YOLO v1 — You Only Look Once</h2>
+          <p class="sub">Mô hình object detection một giai đoạn (one-stage), coi detection như một bài toán hồi quy duy nhất: từ ảnh đầu vào suy ra trực tiếp toạ độ box và lớp, chỉ cần một lần forward qua mạng.</p>
+          <div class="meta-chips">
+            <span class="chip">năm: 2016</span>
+            <span class="chip">tác giả: J. Redmon et al.</span>
+            <span class="chip">loại: one-stage</span>
+            <span class="chip">tốc độ: ~45 FPS</span>
+            <span class="chip">input: 448×448</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">concept : grid_detection</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Kiến thức cơ bản</h3>
+          <p>YOLO v1 chia ảnh đầu vào thành lưới <strong>S × S</strong> (S = 7). Mỗi ô lưới (cell) chịu trách nhiệm dự đoán vật thể nếu <strong>tâm</strong> của vật thể rơi vào ô đó.</p>
+          <ul>
+            <li>Mỗi cell dự đoán <strong>B = 2</strong> bounding box, mỗi box gồm 5 giá trị: (x, y, w, h, confidence).</li>
+            <li>Mỗi cell cũng dự đoán <strong>C = 20</strong> xác suất lớp (theo PASCAL VOC) — xác suất lớp này dùng <em>chung cho cả cell</em>, không tách riêng theo từng box.</li>
+            <li>Tensor đầu ra có kích thước <strong>S×S×(B·5+C) = 7×7×30</strong>.</li>
+            <li>Backbone gồm 24 lớp convolution (lấy cảm hứng từ GoogLeNet) + 2 lớp fully-connected.</li>
+            <li>Vì xử lý toàn ảnh trong một lần forward duy nhất (không có bước region proposal riêng) nên YOLO rất nhanh, phù hợp real-time.</li>
+          </ul>
+
+          <div class="pipeline">
+            <span class="pipe-step">Ảnh 448×448</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">24 Conv layers</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">2 FC layers</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Tensor 7×7×30</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Non-Max Suppression</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Kết quả detection</span>
+          </div>
+
+          <p>Nhược điểm: vì mỗi cell chỉ dự đoán <strong>một</strong> tập xác suất lớp dùng chung cho cả B box, YOLO v1 gặp khó khi nhiều vật thể nhỏ có tâm nằm gần nhau trong cùng một cell (ví dụ bầy chim, đám đông).</p>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">formula : confidence + loss</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Công thức</h3>
+
+          <div class="formula-block">
+            <div class="formula-name">Confidence score của box</div>
+            <div class="formula">Confidence = Pr(Object) × IOU<sub>pred,truth</sub></div>
+            <div class="formula-desc">Bằng 0 nếu cell không chứa vật thể; bằng IoU giữa box dự đoán và ground-truth nếu có.</div>
+          </div>
+
+          <div class="formula-block">
+            <div class="formula-name">Class-specific confidence score</div>
+            <div class="formula">Pr(Class<sub>i</sub> | Object) × Pr(Object) × IOU<sub>pred,truth</sub> = Pr(Class<sub>i</sub>) × IOU<sub>pred,truth</sub></div>
+            <div class="formula-desc">Điểm số cuối cùng dùng để xếp hạng và lọc box ở bước NMS, kết hợp cả độ tin cậy chứa vật thể và độ chính xác lớp.</div>
+          </div>
+
+          <div class="formula-block">
+            <div class="formula-name">Hàm loss (tổng bình phương sai số có trọng số)</div>
+            <table class="term-table">
+              <tr><th>Thành phần</th><th>Công thức</th><th>Ý nghĩa</th></tr>
+              <tr><td>Toạ độ tâm</td><td class="f">λ<sub>coord</sub>·Σ 1<sup>obj</sup><sub>ij</sub>[(x−x̂)²+(y−ŷ)²]</td><td>Sai số vị trí tâm box, chỉ tính khi box đó chịu trách nhiệm cho object</td></tr>
+              <tr><td>Kích thước</td><td class="f">λ<sub>coord</sub>·Σ 1<sup>obj</sup><sub>ij</sub>[(√w−√ŵ)²+(√h−√ĥ)²]</td><td>Dùng căn bậc 2 để giảm ảnh hưởng của sai số trên box lớn so với box nhỏ</td></tr>
+              <tr><td>Confidence (có vật)</td><td class="f">Σ 1<sup>obj</sup><sub>ij</sub>(C−Ĉ)²</td><td>Sai số confidence khi box thực sự chứa vật thể</td></tr>
+              <tr><td>Confidence (không vật)</td><td class="f">λ<sub>noobj</sub>·Σ 1<sup>noobj</sup><sub>ij</sub>(C−Ĉ)²</td><td>Phạt nhẹ hơn (trọng số nhỏ) cho box không chứa vật, tránh mất cân bằng vì đa số box rỗng</td></tr>
+              <tr><td>Phân loại</td><td class="f">Σ 1<sup>obj</sup><sub>i</sub> Σ<sub>c</sub> (p<sub>i</sub>(c)−p̂<sub>i</sub>(c))²</td><td>Sai số xác suất lớp, tính theo từng cell có vật thể</td></tr>
+            </table>
+            <div class="formula-desc">Với S = 7, B = 2, C = 20, λ<sub>coord</sub> = 5, λ<sub>noobj</sub> = 0.5. 1<sup>obj</sup><sub>ij</sub> = 1 nếu box j của cell i chịu trách nhiệm cho một vật thể, ngược lại bằng 0.</div>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">example : grid_cell</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Ví dụ minh họa</h3>
+          <div class="example-svg-wrap">
+            <svg viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="8" width="404" height="214" rx="16" fill="#F3FAFF" stroke="#BEE1F7" stroke-width="2"/>
+              <rect x="181" y="161" width="58" height="31" fill="#FFE3AE" opacity="0.8"/>
+              <line x1="65.7" y1="8" x2="65.7" y2="222" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="123.4" y1="8" x2="123.4" y2="222" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="181.1" y1="8" x2="181.1" y2="222" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="238.9" y1="8" x2="238.9" y2="222" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="296.6" y1="8" x2="296.6" y2="222" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="354.3" y1="8" x2="354.3" y2="222" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="8" y1="38.6" x2="412" y2="38.6" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="8" y1="69.1" x2="412" y2="69.1" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="8" y1="99.7" x2="412" y2="99.7" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="8" y1="130.3" x2="412" y2="130.3" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="8" y1="160.8" x2="412" y2="160.8" stroke="#BEE1F7" stroke-width="1.2"/>
+              <line x1="8" y1="191.4" x2="412" y2="191.4" stroke="#BEE1F7" stroke-width="1.2"/>
+              <ellipse cx="210" cy="170" rx="55" ry="32" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <circle cx="270" cy="148" r="22" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <polygon points="258,130 263,112 271,129" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <rect x="155" y="195" width="10" height="22" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <rect x="245" y="195" width="10" height="22" fill="#D7ECFB" stroke="#2F86C7" stroke-width="2"/>
+              <circle cx="210" cy="176" r="3.5" fill="#1F6BA6"/>
+              <rect x="142" y="118" width="140" height="108" fill="none" stroke="#1F6BA6" stroke-width="3" rx="10"/>
+              <rect x="142" y="100" width="92" height="20" fill="#1F6BA6" rx="6"/>
+              <text x="150" y="114" font-family="JetBrains Mono, monospace" font-size="11" fill="#fff">dog 0.88</text>
+            </svg>
+          </div>
+          <p class="example-caption">Ảnh được chia lưới 7×7. Tâm của con chó rơi vào ô lưới được tô vàng — ô này <strong>chịu trách nhiệm</strong> dự đoán bounding box cho vật thể, dù box dự đoán (viền xanh đậm) có thể trải rộng ra ngoài ô đó.</p>
+        </div>
+
+        <div class="note">
+          <b>Ghi nhớ</b>
+          <p>"You Only Look Once" — chỉ một lần forward qua mạng để ra toàn bộ dự đoán, không cần bước region proposal riêng như R-CNN → rất nhanh, nhưng độ chính xác với vật nhỏ/dày đặc kém hơn các mô hình two-stage.</p>
+        </div>
+      </section>
+
+      <!-- ===== U-Net ===== -->
+      <section id="unet" class="panel">
+        <div class="page-head">
+          <span class="eyebrow">semantic segmentation · 2015</span>
+          <h2>U-Net</h2>
+          <p class="sub">Kiến trúc encoder–decoder đối xứng hình chữ "U", thiết kế ban đầu cho phân đoạn ảnh y tế, hoạt động tốt cả khi dữ liệu huấn luyện ít.</p>
+          <div class="meta-chips">
+            <span class="chip">năm: 2015</span>
+            <span class="chip">tác giả: O. Ronneberger et al.</span>
+            <span class="chip">loại: encoder–decoder segmentation</span>
+            <span class="chip">ứng dụng: ảnh y tế (ISBI)</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">concept : encoder_decoder</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Kiến thức cơ bản</h3>
+          <p>U-Net gồm hai nhánh đối xứng, hoàn toàn convolutional (không có lớp fully-connected) nên áp dụng được cho ảnh đầu vào kích thước bất kỳ.</p>
+          <ul>
+            <li><strong>Contracting path (encoder):</strong> mỗi tầng gồm 2 lớp conv 3×3 + ReLU rồi max-pooling 2×2 để giảm kích thước không gian một nửa, đồng thời số channel tăng gấp đôi (64 → 128 → 256 → 512 → 1024 ở bottleneck).</li>
+            <li><strong>Expanding path (decoder):</strong> mỗi tầng dùng up-convolution 2×2 để tăng kích thước, rồi <strong>nối (concatenate)</strong> với feature map encoder cùng mức qua <em>skip connection</em>, sau đó tiếp tục 2 lớp conv 3×3.</li>
+            <li><strong>Skip connection</strong> là điểm cốt lõi: nó đưa trực tiếp thông tin chi tiết về vị trí/biên (bị mất khi downsample) từ encoder sang decoder, giúp mask đầu ra sắc nét hơn.</li>
+            <li>Lớp cuối là conv 1×1 ánh xạ số channel về số lớp cần phân đoạn, theo sau bởi softmax/sigmoid.</li>
+            <li>Nhờ kiến trúc gọn và augmentation mạnh (biến dạng đàn hồi - elastic deformation), U-Net hoạt động tốt với lượng ảnh huấn luyện rất nhỏ — phù hợp ảnh y tế.</li>
+          </ul>
+
+          <div class="pipeline">
+            <span class="pipe-step">Ảnh đầu vào</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Encoder<br>(4 lần downsample)</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Bottleneck</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Decoder + skip<br>(4 lần upsample)</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Conv 1×1</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Mask phân đoạn</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">formula : conv_size + loss</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Công thức</h3>
+
+          <div class="formula-block">
+            <div class="formula-name">Kích thước đầu ra của một lớp Conv</div>
+            <div class="formula">O = ⌊(W − K + 2P) / S⌋ + 1</div>
+            <div class="formula-desc">W: kích thước đầu vào, K: kích thước kernel, P: padding, S: stride. Dùng để tính kích thước feature map qua từng tầng encoder/decoder.</div>
+          </div>
+
+          <div class="formula-block">
+            <div class="formula-name">Loss: pixel-wise cross-entropy</div>
+            <div class="formula">E = − Σ<sub>x</sub> w(x) · log(p<sub>ℓ(x)</sub>(x))</div>
+            <div class="formula-desc">Tính trên từng pixel x: p<sub>ℓ(x)</sub>(x) là xác suất softmax dự đoán đúng nhãn ℓ(x) của pixel đó; w(x) là trọng số (có thể tăng trọng số ở vùng biên giữa hai vật thể sát nhau).</div>
+          </div>
+
+          <div class="formula-block">
+            <div class="formula-name">Dice coefficient (đánh giá segmentation)</div>
+            <div class="formula">Dice = <span class="frac"><span class="num">2·|X ∩ Y|</span><span class="den">|X| + |Y|</span></span></div>
+            <div class="formula-desc">X: vùng dự đoán, Y: vùng ground-truth. Thường dùng thêm Dice loss (1 − Dice) kết hợp với cross-entropy khi vùng cần phân đoạn rất nhỏ so với ảnh (mất cân bằng lớp).</div>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">example : cell_segmentation</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>Ví dụ minh họa</h3>
+          <div class="example-svg-wrap">
+            <svg viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="18" width="160" height="160" rx="14" fill="#EFF6FB" stroke="#8FCBED" stroke-width="2"/>
+              <circle cx="68" cy="60" r="18" fill="none" stroke="#3C4756" stroke-width="2"/>
+              <circle cx="125" cy="70" r="22" fill="none" stroke="#3C4756" stroke-width="2"/>
+              <circle cx="80" cy="125" r="16" fill="none" stroke="#3C4756" stroke-width="2"/>
+              <circle cx="140" cy="135" r="20" fill="none" stroke="#3C4756" stroke-width="2"/>
+              <polygon points="195,75 232,75 232,60 252,98 232,136 232,121 195,121" fill="#1F6BA6"/>
+              <text x="200" y="160" font-family="JetBrains Mono, monospace" font-size="11" fill="#1F6BA6">U-Net</text>
+              <rect x="270" y="18" width="160" height="160" rx="14" fill="#FFFFFF" stroke="#8FCBED" stroke-width="2"/>
+              <circle cx="318" cy="60" r="18" fill="#2F86C7"/>
+              <circle cx="375" cy="70" r="22" fill="#2F86C7"/>
+              <circle cx="330" cy="125" r="16" fill="#2F86C7"/>
+              <circle cx="390" cy="135" r="20" fill="#2F86C7"/>
+              <text x="60" y="198" font-family="Inter, sans-serif" font-size="12" fill="#3C4756">Ảnh đầu vào</text>
+              <text x="305" y="198" font-family="Inter, sans-serif" font-size="12" fill="#3C4756">Mask đầu ra</text>
+            </svg>
+          </div>
+          <p class="example-caption">Ví dụ phân đoạn tế bào trong ảnh kính hiển vi: ảnh grayscale đầu vào (trái) chứa các tế bào, U-Net dự đoán mask nhị phân (phải) gán từng pixel là <strong>"tế bào"</strong> (tô màu) hay <strong>"nền"</strong> (trắng).</p>
+        </div>
+
+        <div class="note">
+          <b>Ghi nhớ</b>
+          <p>U-Net = Encoder nén thông tin ngữ nghĩa + Decoder khôi phục kích thước + Skip connection nối trực tiếp encoder→decoder để giữ chi tiết biên. Tên "U" xuất phát từ hình dạng kiến trúc đối xứng khi vẽ sơ đồ.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const navItems = document.querySelectorAll('.nav-item');
+  const panels = document.querySelectorAll('.panel');
+
+  function activate(id){
+    navItems.forEach(b => b.classList.toggle('active', b.dataset.target === id));
+    panels.forEach(p => p.classList.toggle('active', p.id === id));
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  navItems.forEach(btn => {
+    btn.addEventListener('click', () => activate(btn.dataset.target));
+  });
+
+  function goTo(id){ activate(id); }
+</script>
+
+</body>
+</html>
