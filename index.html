@@ -69,6 +69,10 @@ body{
 .brand h1{font-family:'Space Grotesk';font-size:18px;letter-spacing:.01em;}
 .brand p{font-size:11.5px;opacity:.72;margin-top:8px;line-height:1.5;}
 
+.nav-divider{
+  font-family:'JetBrains Mono';font-size:10px;text-transform:uppercase;
+  letter-spacing:.07em;opacity:.5;padding:16px 12px 6px;
+}
 nav{display:flex;flex-direction:column;gap:5px;}
 .nav-item{
   display:flex;align-items:center;gap:10px;
@@ -195,7 +199,8 @@ table.cmp td b{color:var(--blue-900);}
 .note p{font-size:13.4px;color:#5b4400;margin:0;}
 
 /* overview quick grid */
-.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px;}
+.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:30px;}
+.section-label{font-family:'Space Grotesk';font-size:19px;color:var(--ink);margin:40px 0 4px;}
 .quick-card{
   background:var(--card-bg);border:2px solid var(--blue-300);border-radius:16px;
   padding:18px;cursor:pointer;transition:.15s;text-align:left;
@@ -261,6 +266,19 @@ table.cmp td b{color:var(--blue-900);}
         U-Net
         <span class="label-num">03</span>
       </button>
+
+      <div class="nav-divider">Bài tập tự luận</div>
+
+      <button class="nav-item" data-target="cau1">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.5"/><path d="M19 19l-4.5-4.5"/></svg>
+        Câu 1 · Đặc trưng
+        <span class="label-num">04</span>
+      </button>
+      <button class="nav-item" data-target="cau2">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="8" height="14" rx="1.5"/><circle cx="17.5" cy="9" r="3"/><path d="M14.5 16.5h6"/><path d="M14.5 20h6"/></svg>
+        Câu 2 · CNN/Transformer
+        <span class="label-num">05</span>
+      </button>
     </nav>
 
     <div class="sidebar-footer">build: cv-101 · ôn tập giữa kỳ</div>
@@ -309,6 +327,22 @@ table.cmp td b{color:var(--blue-900);}
             <div class="qc-tag">model.03</div>
             <h4>U-Net</h4>
             <p>Kiến trúc encoder–decoder hình chữ U cho phân đoạn ảnh, đặc biệt ảnh y tế.</p>
+            <span class="go">Xem chi tiết →</span>
+          </button>
+        </div>
+
+        <h3 class="section-label">Bài tập tự luận theo CLO</h3>
+        <div class="quick-grid">
+          <button class="quick-card" onclick="goTo('cau1')">
+            <div class="qc-tag">câu 1 · CLO1</div>
+            <h4>Trích xuất đặc trưng ảnh &amp; video</h4>
+            <p>Phương pháp truyền thống vs học sâu, so sánh và ứng dụng thực tế.</p>
+            <span class="go">Xem chi tiết →</span>
+          </button>
+          <button class="quick-card" onclick="goTo('cau2')">
+            <div class="qc-tag">câu 2 · CLO2</div>
+            <h4>CNN vs Transformer</h4>
+            <p>Hai kiến trúc cho phân loại ảnh / nhận diện đối tượng, so sánh và bài toán thực tế.</p>
             <span class="go">Xem chi tiết →</span>
           </button>
         </div>
@@ -613,6 +647,147 @@ table.cmp td b{color:var(--blue-900);}
         <div class="note">
           <b>Ghi nhớ</b>
           <p>U-Net = Encoder nén thông tin ngữ nghĩa + Decoder khôi phục kích thước + Skip connection nối trực tiếp encoder→decoder để giữ chi tiết biên. Tên "U" xuất phát từ hình dạng kiến trúc đối xứng khi vẽ sơ đồ.</p>
+        </div>
+      </section>
+
+      <!-- ===== CÂU 1 - CLO1: TRÍCH XUẤT ĐẶC TRƯNG ===== -->
+      <section id="cau1" class="panel">
+        <div class="page-head">
+          <span class="eyebrow">câu 1 · CLO1 · 5 điểm</span>
+          <h2>Trích xuất đặc trưng từ ảnh &amp; video</h2>
+          <p class="sub">Trích xuất đặc trưng (feature extraction) là bước biến ảnh/video thô thành một biểu diễn số mang thông tin phân biệt được, làm đầu vào cho các bước nhận diện, phân loại, theo dõi phía sau.</p>
+          <div class="meta-chips">
+            <span class="chip">truyền thống: HOG, SIFT, ORB</span>
+            <span class="chip">học sâu: CNN, ResNet</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">2.0đ · ba phương pháp</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>1. Ba phương pháp trích xuất đặc trưng</h3>
+
+          <p><strong>① HOG (Histogram of Oriented Gradients) — truyền thống.</strong> Chia ảnh thành các ô nhỏ (cell), tính gradient cường độ sáng tại mỗi pixel, rồi gom thành histogram theo hướng gradient trong từng cell. Đặc trưng cuối là vector nối các histogram này, mô tả tốt <em>hình dạng/đường biên</em> của vật thể. Nổi tiếng với bài toán phát hiện người đi bộ (HOG + SVM, Dalal &amp; Triggs).</p>
+          <div class="formula-block">
+            <div class="formula-name">Gradient tại mỗi pixel (HOG)</div>
+            <div class="formula">G = √(G<sub>x</sub>² + G<sub>y</sub>²) &nbsp;&nbsp; θ = atan2(G<sub>y</sub>, G<sub>x</sub>)</div>
+            <div class="formula-desc">G<sub>x</sub>, G<sub>y</sub>: đạo hàm theo trục ngang/dọc. G là độ lớn gradient (đóng góp vào histogram), θ là hướng gradient (quyết định bin nào trong histogram).</div>
+          </div>
+
+          <p><strong>② SIFT (Scale-Invariant Feature Transform) — truyền thống.</strong> Tìm các điểm đặc trưng (keypoint) ổn định qua phép biến đổi <em>Difference of Gaussian</em> ở nhiều tỉ lệ (scale-space), rồi mô tả mỗi keypoint bằng vector 128 chiều dựa trên hướng gradient lân cận. Bất biến với phép xoay, co giãn tỉ lệ và thay đổi ánh sáng nhẹ — dùng nhiều trong ghép ảnh panorama, nhận diện vật thể theo điểm đặc trưng.</p>
+
+          <p><strong>③ CNN / ResNet — học sâu.</strong> Thay vì thiết kế đặc trưng bằng tay, CNN học các bộ lọc (filter) tự động qua nhiều lớp convolution xếp chồng: lớp đầu học cạnh/màu đơn giản, lớp sâu hơn học hình dạng và ngữ nghĩa phức tạp. ResNet bổ sung <em>residual connection</em> giúp huấn luyện mạng rất sâu (50–152 lớp) mà không bị vanishing gradient.</p>
+          <div class="formula-block">
+            <div class="formula-name">Residual connection (ResNet)</div>
+            <div class="formula">y = F(x, {W<sub>i</sub>}) + x</div>
+            <div class="formula-desc">x là đầu vào của block, F(x) là phần biến đổi qua các lớp conv, "+x" là đường tắt (skip connection) giúp gradient lan truyền ngược dễ dàng hơn qua mạng rất sâu.</div>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">1.5đ · so_sanh</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>2. So sánh truyền thống vs học sâu</h3>
+          <div class="table-wrap">
+            <table class="cmp">
+              <tr><th>Tiêu chí</th><th>Truyền thống (HOG/SIFT/ORB)</th><th>Học sâu (CNN/ResNet)</th></tr>
+              <tr><td><b>Hiệu suất tính toán</b></td><td>Nhẹ, chạy tốt trên CPU, không cần dữ liệu huấn luyện</td><td>Nặng hơn, cần GPU để huấn luyện và suy luận nhanh</td></tr>
+              <tr><td><b>Độ chính xác</b></td><td>Khá tốt với bài toán đơn giản, hạn chế khi ảnh phức tạp/nhiều nhiễu</td><td>Cao hơn rõ rệt trên dữ liệu phức tạp nhờ học đặc trưng đa cấp tự động</td></tr>
+              <tr><td><b>Khả năng khái quát hóa</b></td><td>Kém khi điều kiện ánh sáng, góc nhìn, tỉ lệ thay đổi nhiều (đặc trưng thiết kế tay, cố định)</td><td>Tốt hơn nếu được huấn luyện trên dữ liệu đủ lớn/đa dạng; có thể overfit nếu thiếu dữ liệu</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">1.5đ · ung_dung</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>3. Ứng dụng thực tế: Giám sát giao thông</h3>
+          <p>Đề xuất hệ thống <strong>giám sát giao thông</strong> dùng camera để phát hiện, phân loại và đếm phương tiện (ô tô, xe máy, xe buýt) trên đường, hỗ trợ điều khiển tín hiệu đèn và phát hiện vi phạm.</p>
+          <p>Phương pháp phù hợp nhất: <strong>trích xuất đặc trưng bằng CNN/ResNet</strong> (thường làm backbone cho một mô hình detection như YOLO/Faster R-CNN), vì:</p>
+          <ul>
+            <li>Điều kiện thực tế thay đổi liên tục: ánh sáng ngày/đêm, trời mưa, góc camera, khoảng cách xe — CNN khái quát hóa tốt hơn HOG/SIFT trong các điều kiện này nếu được huấn luyện trên dữ liệu đa dạng.</li>
+            <li>Cần phân loại nhiều loại phương tiện với hình dạng/kích thước khác nhau — CNN học được đặc trưng phân cấp (từ cạnh → hình dạng → ngữ nghĩa loại xe) tốt hơn đặc trưng thiết kế tay.</li>
+            <li>CNN backbone có thể tích hợp trực tiếp vào pipeline phát hiện đối tượng end-to-end (vừa trích đặc trưng vừa định vị, phân loại), phù hợp xử lý video thời gian thực với số lượng phương tiện lớn.</li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <b>Ghi nhớ</b>
+          <p>Truyền thống (HOG/SIFT/ORB) = đặc trưng thiết kế tay, nhanh, ít dữ liệu nhưng kém khái quát. Học sâu (CNN/ResNet) = đặc trưng học tự động, chính xác và khái quát tốt hơn nhưng cần nhiều dữ liệu + tính toán mạnh.</p>
+        </div>
+      </section>
+
+      <!-- ===== CÂU 2 - CLO2: CNN VS TRANSFORMER ===== -->
+      <section id="cau2" class="panel">
+        <div class="page-head">
+          <span class="eyebrow">câu 2 · CLO2 · 5 điểm</span>
+          <h2>CNN vs Transformer trong phân loại ảnh &amp; nhận diện đối tượng</h2>
+          <p class="sub">Hai hướng kiến trúc chính để học đặc trưng và phân loại ảnh hiện nay: mạng tích chập (CNN) với prior cục bộ, và Transformer dựa trên self-attention học mối quan hệ toàn cục.</p>
+          <div class="meta-chips">
+            <span class="chip">nhóm CNN: ResNet</span>
+            <span class="chip">nhóm Transformer: Vision Transformer (ViT)</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">2.0đ · hai_kien_truc</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>1. Hai kiến trúc phổ biến</h3>
+
+          <p><strong>① ResNet — nhóm CNN.</strong> Xếp chồng nhiều lớp convolution để học đặc trưng cục bộ, tăng dần receptive field qua các tầng. Đóng góp quan trọng nhất là <em>residual block</em>: thay vì học trực tiếp hàm ánh xạ, mạng học phần dư F(x) rồi cộng lại với đầu vào x, giúp huấn luyện được mạng rất sâu (50–152 lớp) mà vẫn tối ưu được, không bị vanishing gradient.</p>
+          <div class="pipeline">
+            <span class="pipe-step">Ảnh đầu vào</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Conv 7×7 + Pool</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Residual blocks ×N</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Global Avg Pool</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">FC + Softmax</span>
+          </div>
+
+          <p><strong>② Vision Transformer (ViT) — nhóm Transformer.</strong> Cắt ảnh thành các patch nhỏ (ví dụ 16×16), trải phẳng mỗi patch thành vector rồi cộng thêm positional embedding để giữ thông tin vị trí. Dãy patch này được đưa qua các lớp Transformer encoder với <em>multi-head self-attention</em>, cho phép mỗi patch "nhìn thấy" mọi patch khác ngay từ lớp đầu. Một token đặc biệt [CLS] được dùng để tổng hợp thông tin cho phân loại.</p>
+          <div class="formula-block">
+            <div class="formula-name">Self-attention (thành phần lõi của Transformer)</div>
+            <div class="formula">Attention(Q, K, V) = softmax<span class="frac"><span class="num">QK<sup>T</sup></span><span class="den">√d<sub>k</sub></span></span> · V</div>
+            <div class="formula-desc">Q, K, V là các phép chiếu tuyến tính của patch embedding; softmax(QKᵗ/√d<sub>k</sub>) cho biết mỗi patch nên "chú ý" bao nhiêu đến các patch khác khi tổng hợp đặc trưng.</div>
+          </div>
+          <div class="pipeline">
+            <span class="pipe-step">Ảnh đầu vào</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Chia patch 16×16</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Patch + Position Embedding</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Transformer Encoder ×N</span><span class="pipe-arrow">→</span>
+            <span class="pipe-step">Token [CLS] → MLP</span>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">1.5đ · so_sanh</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>2. So sánh CNN và Transformer</h3>
+          <div class="table-wrap">
+            <table class="cmp">
+              <tr><th>Tiêu chí</th><th>CNN (ResNet)</th><th>Transformer (ViT)</th></tr>
+              <tr><td><b>Dữ liệu nhỏ/lớn</b></td><td>Hoạt động tốt cả khi dữ liệu nhỏ nhờ inductive bias (local connectivity, weight sharing)</td><td>Cần dữ liệu lớn (hoặc pretrain quy mô lớn) mới phát huy hết khả năng, vì ít prior về cấu trúc ảnh</td></tr>
+              <tr><td><b>Khả năng học đặc trưng</b></td><td>Học đặc trưng cục bộ trước, mở rộng receptive field dần qua các tầng</td><td>Học mối quan hệ toàn cục giữa các patch ngay từ lớp đầu tiên qua self-attention</td></tr>
+              <tr><td><b>Tốc độ suy luận</b></td><td>Thường nhanh hơn, tối ưu tốt trên phần cứng phổ biến</td><td>Self-attention có độ phức tạp bậc 2 theo số patch → chậm hơn với ảnh độ phân giải cao (Swin Transformer dùng window attention để giảm chi phí này)</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="bbox-card">
+          <span class="tag">1.5đ · bai_toan</span>
+          <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          <h3>3. Bài toán thực tế: Chẩn đoán bệnh từ ảnh y khoa</h3>
+          <p>Đề xuất bài toán <strong>chẩn đoán bệnh từ ảnh y khoa</strong> (X-quang phổi, MRI, ảnh nội soi) — phân loại ảnh thành "bình thường" / "có dấu hiệu bệnh lý" hoặc khoanh vùng tổn thương.</p>
+          <p>Mô hình phù hợp hơn: <strong>CNN (ResNet)</strong>, vì:</p>
+          <ul>
+            <li>Dữ liệu y khoa được gán nhãn thường <strong>khan hiếm</strong> (chi phí gán nhãn cao, cần chuyên gia) — CNN với inductive bias cục bộ học hiệu quả hơn Transformer khi lượng dữ liệu hạn chế.</li>
+            <li>Có sẵn rất nhiều CNN pretrained trên ImageNet để fine-tune nhanh cho ảnh y khoa, rút ngắn thời gian huấn luyện và giảm rủi ro overfitting.</li>
+            <li>ViT chỉ thật sự vượt trội khi được pretrain trên dữ liệu rất lớn; nếu không có nguồn dữ liệu y khoa quy mô lớn để pretrain, CNN vẫn là lựa chọn an toàn và ổn định hơn (hoặc dùng kiến trúc lai CNN–Transformer để kết hợp ưu điểm cả hai).</li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <b>Ghi nhớ</b>
+          <p>CNN học cục bộ → toàn cục dần, có prior tốt nên hợp dữ liệu nhỏ. Transformer học toàn cục ngay từ đầu qua self-attention, mạnh nhưng "khát" dữ liệu lớn để học tốt prior đó từ đầu.</p>
         </div>
       </section>
 
